@@ -42,7 +42,7 @@ Window {
                         zoomEnabled: false
                     }
                     Bar3DSeries {
-                        itemLabelFormat: "@colLabel"
+                        itemLabelFormat: "@colLabel: @valueLabel"
                         baseColor: "green"
 
                         ItemModelBarDataProxy {
@@ -76,21 +76,27 @@ Window {
             }
 
             Repeater {
+                id: repeaterMod
                 model: _mainwindow.modeWord
 
                 Text {
                     text: modelData["word"]
                     visible: false
                     onTextChanged: {
-                        if (dataModel.count < 15) {
+                        // for( )
+                        let indexes = [...Array(dataModel.count).keys()]
+                        if (indexes.length < 15) {
                             dataModel.append({
                                                  "row": modelData["row"],
                                                  "word": modelData["word"],
                                                  "countMode": modelData["countMode"]
                                              })
-                        } else {
-                            dataModel.remove(0)
                         }
+                        dataModel.set(modelData["Index"], {
+                                          "row": modelData["row"],
+                                          "word": modelData["word"],
+                                          "countMode": modelData["countMode"]
+                                      })
                     }
                 }
             }

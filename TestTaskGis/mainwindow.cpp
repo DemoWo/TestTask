@@ -51,6 +51,7 @@ QVariantList MainWindow::modeWord()
     }
     if( List2.length() > 0 ) {
         for( int i = 0; i < List2.length(); i++) {
+            list["Index"] = i;
             list["row"] = List2.at( i ).row;
             list["word"] = List2.at( i ).word;
             list["countMode"] = List2.at( i ).countMode;
@@ -94,14 +95,6 @@ bool MainWindow::startActive()
 // Обработка нажатия на кнопку Старт
 void MainWindow::setStartActive( const bool active )
 {
-    if( ActivePause ) {
-        ActiveStart = active;
-        ActivePause = false;
-        emit startActiveChanged();
-        emit pauseActiveChanged();
-        return;
-    }
-
     ActiveStart = active;
     ActivePause = false;
     ActiveCancel = false;
@@ -111,7 +104,9 @@ void MainWindow::setStartActive( const bool active )
         ProcessingFile.start();
         emit signalLoadFile( nameFile );
     }
-
+    if( !List.isEmpty() ) {
+        List.clear();
+    }
     emit startActiveChanged();
     emit pauseActiveChanged();
     emit cancelActiveChanged();
@@ -147,6 +142,7 @@ void MainWindow::setCancelActive( const bool active )
     ActiveStart = false;
     ActivePause = false;
     loadFile = 0.0;
+    nameFile = "";
     emit progressLoadChanged();
     emit startActiveChanged();
     emit pauseActiveChanged();
@@ -182,18 +178,15 @@ void MainWindow::ReadFile( const QString &pathFile )
 void MainWindow::ProcessingReadFile( const QString &word )
 {
     listWord[word]++;
-    QMap<QString, int>::iterator iter = listWord.begin();
-    for(;iter != listWord.end(); ++iter) {
-        ListElementMode list;
-        list.row = "1";
-        list.word = iter.key();
-        list.countMode = QString::number( iter.value() );
-        AddVector( list );
-    }
+    ListElementMode list;
+    list.row = "1";
+    list.word = listWord.find( word ).key();
+    list.countMode = QString::number( listWord.find( word ).value() );
+    AddVector( list );
     if( loadFile < 1.0 - count ) {
         loadFile += count;
     } else {
-        loadFile = 0.1;
+        loadFile = 1.0;
     }
 }
 
@@ -208,6 +201,7 @@ void MainWindow::timerUpdate()
 void MainWindow::AddVector( ListElementMode list )
 {
     bool check = false;
+    Mutex.lock();
     for( int i = 0; i < List.size(); i++ ) {
         if( list.word == List.at( i ).word ) {
             List[i].countMode = list.countMode;
@@ -227,11 +221,20 @@ void MainWindow::AddVector( ListElementMode list )
     if( !check ) {
         List.append( list );
     }
-    for( int i = 0; i < List2.size(); i++ ) {
-        for( int k = 0; k < List.size(); k++ ) {
-            if( i > 0 ? List2.at( i - 1 ).countMode > List.at( k ).countMode : List2.at( i ).countMode < List.at( k ).countMode ) {
-                List2[ i ] = List[ k ];
-            }
+    int sizeList = 0;
+    if( List.size() >= 15 ) {
+        sizeList = List.size() - 15;
+        for( int i = 0; i < List2.size(); i++ ) {
+            List2[ i ] = List[ sizeList + i ];
         }
     }
+    if( List.size() < 15 ) {
+        for( int i = 0; i < List2.size(); i++ ) {
+            if( i >= List.size() ) {
+                break;
+            }
+            List2[ i ] = List[ sizeList + i ];
+        }
+    }
+    Mutex.unlock();
 }

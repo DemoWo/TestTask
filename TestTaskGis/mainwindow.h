@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QThread>
 #include <QVector>
+#include <QMutex>
 
 class MainWindow : public QObject
 {
@@ -38,6 +39,7 @@ public:
     Q_INVOKABLE void setCancelActive( const bool );
 
 private:
+
     double loadFile = 0.0;
     double count = 0.0;
     QString nameFile;
@@ -55,6 +57,7 @@ private:
         QString word;
         QString countMode;
     };
+    QMutex Mutex;
     QVector <ListElementMode> List;
     QVector <ListElementMode> List2;
 
